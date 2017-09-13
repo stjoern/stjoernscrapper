@@ -2,7 +2,6 @@
 Created on Sep 10, 2017
 
 @author: mmullero
-help: https://www.scrapehero.com/tutorial-web-scraping-hotel-prices-using-selenium-and-python/
 '''
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -11,6 +10,8 @@ from stjoernscrapper import logger
 from stjoernscrapper.core import Core
 from time import sleep
 from lxml import html
+from stjoernscrapper.mongo_service import db
+import re
 
 class WebCrawler(object):
     '''
@@ -26,6 +27,8 @@ class WebCrawler(object):
         self.checkDriver = kwargs.get('checkDriver', True)
         self.set_web_driver()
         self.dbName = Core.get_db_name(self.webDomain)
+        self.iso_time = Core.get_iso_datetime()
+        self.ts = Core.get_last_insert_counter(self.dbName)
         
     def set_web_driver(self, driver = 'chrome'):
         try:
@@ -48,6 +51,20 @@ class WebCrawler(object):
         assert "No results found." not in self.driver.page_source
         self.driver.close()
         
+    def _getPager(self):
+        '''
+        getPager method is dedicated for getting range (start, endPage)
+        '''
+        elems = self.driver.find_elements_by_xpath("//div[@class='pager']/a[@href]")
+        if elems:
+            last_href = elems[-1].get_attribute('href')
+            print(last_href)
+            m = re.search('.*&pg=(?P<maxpage>[0-9]+)$', last_href)
+            max_page = int(m.group('maxpage'))
+            return max_page
+        return None
+         
+    
     def parse(self):
         if self.checkDriver:
             self._check_for_driver() #TODO: create decorator
@@ -77,47 +94,58 @@ class WebCrawler(object):
                 typ = 'ostatni'
             else:
                 continue
-            self.driver.get(link)
-            typ = link.text
-            typ = Core.normalize2ascii(typ)
             submitButton = self.driver.find_element_by_xpath('//input[@type="submit"]')
             if submitButton:
                 submitButton.click()
                 sleep(15)
                 
-            parser = html.fromstring(self.driver.page_source, self.driver.current_url)
-            cars = parser.xpath('//div[contains(@name,"auto")]/div[@class="pravaCast"]')
-            for car in cars:
-                car_title = car.xpath('.//h2/a')
-                if car_title:
-                    name = Core.normalize2ascii(car_title[0].text)
-                    #todo exceptions if nothing found
-                parameters = car.xpath('.//table[@class="parametry"]/tbody')[0]
-                if parameters:
-                    cena = parameters.xpath('tr[@class="cena"]/td')[0].text
-                    
-                    other_parameters = parameters.xpath('tr[not(@class="cena")]')
-                    for param in other_parameters:
-                        th = parameters.xpath('tr/th').text
-                        td = parameters.xpath('tr/td').text
-                        td = Core.normalize2ascii(td)
-                        if th == 'Vyrobeno':
-                            vyrobeno = Core.parseNumber(td)
-                        elif th == 'Tachometr':
-                            tachometr = Core.parseNumber(td)
-                        elif th == 'Palivo':
-                            palivo = td
-                        elif th == 'Motorizace':
-                            motorizace = td
-                        elif th == 'Tvar karoserie':
-                            tvar_karoserie = td
-            # DO something
+            page_max = self._getPager()
+            current_url_without_paging = self.driver.current_url
+            for page in range(0,page_max):
+                redirect_to_url = "{no_page}&pg={page}".format(no_page=current_url_without_paging, page=page)
+                self.driver.get(redirect_to_url)
+                db_cars = []
+                
+                parser = html.fromstring(self.driver.page_source, self.driver.current_url)
+                cars = parser.xpath('//div[contains(@name,"auto")]/div[@class="pravaCast"]')
+                for car in cars:
+                    db_car = {}
+                    car_title = car.xpath('.//h2/a')
+                    if car_title:
+                        db_car['ts'] = self.ts
+                        db_car['name'] = Core.normalize2ascii(car_title[0].text)
+                        #todo exceptions if nothing found
+                    parameters = car.xpath('.//table[@class="parametry"]/tbody')[0]
+                    if parameters:
+                        cena = parameters.xpath('tr[@class="cena"]/td')[0].text
+                        db_car['cena'] = Core.parseNumber(cena)
+                        other_parameters = parameters.xpath('tr[not(@class="cena")]')
+                        for param in other_parameters:
+                            th = param.xpath('th')[0].text
+                            td = param.xpath('td')[0].text
+                            td = Core.normalize2ascii(td)
+                            if th == 'Vyrobeno':
+                                value = Core.parseNumber(td)
+                                if value:
+                                    db_car['vyrobeno'] = value
+                            elif th == 'Tachometr':
+                                value = Core.parseNumber(td)
+                                if value:
+                                    db_car['tachometr'] = value
+                            elif th == 'Palivo':
+                                db_car['palivo'] = td
+                            elif th == 'Motorizace':
+                                db_car['motorizace'] = td
+                            elif th == 'Tvar karoserie':
+                                db_car['tvar_karoserie'] = td
+                            else:
+                                continue
+                    if any(db_car):
+                        db_cars.append(db_car)
+                if any(db_cars):
+                    db[self.dbName].insert(db_cars,{'ordered':False})
             
     def close(self):
         logger.info("Successfully finished {}".format(self.webDomain))
         self.driver.close()         
         
-        #searchKeyElement = response.find_elements_by_xpath('//input[contains(@id,"destination")]')
-        #tems = driver.find_elements_by_xpath("//ul[@id = 'myId']//li[not(@class)]")
-        #for item in items:
-            #item.click()
