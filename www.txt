@@ -1,1 +1,3 @@
-https://www.automodul.cz
+#www url, <className>
+https://nakup.itesco.cz/groceries/cs-CZ, <NakupITesco>
+https://www.automodul.cz, <WebCrawler>

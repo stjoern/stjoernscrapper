@@ -10,6 +10,7 @@ import tldextract
 from time import time
 from datetime import datetime
 from mongo_service import db
+import sys
 
 class Core(object):
     '''
@@ -38,10 +39,11 @@ class Core(object):
     
     @staticmethod
     def parseNumber(string):
-        if not string or not len(string):
+        if not string:
             return None
-        cena = Core.normalize2ascii(string)
-        cena = Core.removeEmptyLines(cena)
+        cena = Core.removeEmptyLines(string)
+        if not len(string):
+            return None
         m = re.search('(\d+)', cena)
         return m.group(1)
         
@@ -71,7 +73,8 @@ class Core(object):
         else:
             return 0
         
-#p = '(?:http.*://)?(?P<host>[^:/ ]+).?(?P<port>[0-9]*).*'
-#m = re.search(p,'http://www.abc.com:123/test')
-#m.group('host') # 'www.abc.com'
-#m.group('port') # '123'
+    @staticmethod
+    def get_decimal_from_comma_string(string):
+        s1 = Core.removeEmptyLines(string)
+        s2 = s1.replace(',','.')
+        return float('%.2f' % float(s2))

@@ -5,7 +5,6 @@ Created on Sep 10, 2017
 '''
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
 from stjoernscrapper import logger
 from stjoernscrapper.core import Core
 from time import sleep
@@ -17,13 +16,13 @@ class WebCrawler(object):
     '''
     classdocs
     '''
-    WebDomains = []
+    WebDomains = {}
 
     def __init__(self, *args, **kwargs):
         '''
         Constructor
         '''
-        self.webDomain = kwargs.get('webDomain', WebCrawler.WebDomains.pop())
+        self.webDomain = kwargs.get('webDomain')
         self.checkDriver = kwargs.get('checkDriver', True)
         self.set_web_driver()
         self.dbName = Core.get_db_name(self.webDomain)
@@ -102,6 +101,7 @@ class WebCrawler(object):
             page_max = self._getPager()
             current_url_without_paging = self.driver.current_url
             for page in range(0,page_max):
+                print('page: {}'.format(page))
                 redirect_to_url = "{no_page}&pg={page}".format(no_page=current_url_without_paging, page=page)
                 self.driver.get(redirect_to_url)
                 db_cars = []
@@ -109,35 +109,39 @@ class WebCrawler(object):
                 parser = html.fromstring(self.driver.page_source, self.driver.current_url)
                 cars = parser.xpath('//div[contains(@name,"auto")]/div[@class="pravaCast"]')
                 for car in cars:
-                    db_car = {}
+                    db_car = {'type': typ, 'created': self.iso_time}
                     car_title = car.xpath('.//h2/a')
                     if car_title:
                         db_car['ts'] = self.ts
-                        db_car['name'] = Core.normalize2ascii(car_title[0].text)
+                        db_car['title'] = Core.normalize2ascii(car_title[0].text)
                         #todo exceptions if nothing found
                     parameters = car.xpath('.//table[@class="parametry"]/tbody')[0]
                     if parameters:
                         cena = parameters.xpath('tr[@class="cena"]/td')[0].text
-                        db_car['cena'] = Core.parseNumber(cena)
+                        db_car['price'] = Core.parseNumber(cena)
                         other_parameters = parameters.xpath('tr[not(@class="cena")]')
                         for param in other_parameters:
                             th = param.xpath('th')[0].text
                             td = param.xpath('td')[0].text
+                            if not td:
+                                continue
                             td = Core.normalize2ascii(td)
+                            if not len(td):
+                                continue
                             if th == 'Vyrobeno':
                                 value = Core.parseNumber(td)
                                 if value:
-                                    db_car['vyrobeno'] = value
+                                    db_car['produced'] = value
                             elif th == 'Tachometr':
                                 value = Core.parseNumber(td)
                                 if value:
-                                    db_car['tachometr'] = value
+                                    db_car['speedometer'] = value
                             elif th == 'Palivo':
-                                db_car['palivo'] = td
+                                db_car['fuel'] = td
                             elif th == 'Motorizace':
                                 db_car['motorizace'] = td
                             elif th == 'Tvar karoserie':
-                                db_car['tvar_karoserie'] = td
+                                db_car['body_shape'] = td
                             else:
                                 continue
                     if any(db_car):

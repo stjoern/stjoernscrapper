@@ -5,9 +5,12 @@ Created on Sep 10, 2017
 '''
 from optparse import OptionParser
 from stjoernscrapper.webcrawler import WebCrawler
+from stjoernscrapper.nakup_itesco import NakupITesco
 from stjoernscrapper import logger
 import logging
 import sys
+from stjoernscrapper.config import Config
+from stjoernscrapper.core import Core
 
 def main():
     
@@ -29,8 +32,12 @@ def main():
         h1 = logging.StreamHandler(sys.stdout)
         h1.setLevel(logging.INFO)
         h1.setFormatter(formatter)
+        h2 = logging.FileHandler(Config.logpath)
+        h2.setFormatter(formatter)
+        h2.setLevel(logging.INFO)
        
         logger.addHandler(h1)
+        logger.addHandler(h2)
         
     def parse_input():
         parser = OptionParser(usage="usage: %prog [options] filename", version="%prog 1.0")
@@ -49,8 +56,10 @@ def main():
             try:
                 logger.debug("Parse input file with web domains")
                 with open(options.input_file) as f:
-                    web_domains = f.read().splitlines()
-                    return filter(lambda x: x.strip().startswith('#')==False, web_domains)
+                    line = f.read().splitlines()
+                    web = filter(lambda x: x.strip().startswith('#')==False, line)
+                    res = {Core.removeEmptyLines(x).split(',')[0]:Core.removeEmptyLines(x).split(',')[1] for x in web} 
+                    return res
             except Exception as e:
                 logger.error("Error, the file with web domains is not valid. {}".format(e.message))
                 exit(-1)
@@ -62,10 +71,12 @@ def main():
     parse_input()
     
     def Start():
-        for item in WebCrawler.WebDomains:
-            print("crawling domain: {}".format(item))
-            web = WebCrawler(checkDriver=False)
-            web.parse()
+        for key, value in WebCrawler.WebDomains.iteritems():
+            print("crawling domain: {}".format(key))
+            value = value.replace('<','').replace('>','')
+            web = globals()[value](webDomain=key, checkDriver=False)
+            if web:
+                web.parse()
             
     Start()
 
