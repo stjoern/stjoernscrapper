@@ -12,3 +12,4 @@ class Config(object):
     MONGODB_DB = "stjoern-scrapper"
     basedir = os.path.abspath(os.path.dirname(__file__))
     logpath = os.path.join(basedir, 'stjoern-scrapper.log')
+    threading = False

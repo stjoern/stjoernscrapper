@@ -3,16 +3,15 @@ Created on Sep 10, 2017
 
 @author: mmullero
 '''
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
+import re
+
+from selenium.common.exceptions import NoSuchElementException
+
 from stjoernscrapper import logger
 from stjoernscrapper.core import Core
-from time import sleep
-from lxml import html
 from stjoernscrapper.mongo_service import db
-import re
 from stjoernscrapper.webcrawler import WebCrawler
-from selenium.common.exceptions import NoSuchElementException
+
 
 class NakupITesco(WebCrawler):
     '''

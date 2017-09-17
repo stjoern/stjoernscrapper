@@ -44,8 +44,21 @@ class Core(object):
         cena = Core.removeEmptyLines(string)
         if not len(string):
             return None
-        m = re.search('(\d+)', cena)
+        m = re.search('(\d+(?:,\d+)?)', cena)
         return m.group(1)
+        
+    @staticmethod
+    def get_decimal_measurement_unit(string):
+        if not string:
+            return None
+        string = Core.trim(string)
+        m = re.search('(\d+(?:,\d+)?)\s*(.*)$', string)
+        decimal = m.group(1)
+        measurement_unit = m.group(2)
+        if decimal:
+            decimal = Core.get_decimal_from_comma_string(decimal)
+        return (decimal, measurement_unit)
+        
         
     @staticmethod
     def get_db_name(url):

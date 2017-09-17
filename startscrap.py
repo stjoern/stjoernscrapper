@@ -5,12 +5,14 @@ Created on Sep 10, 2017
 '''
 from optparse import OptionParser
 from stjoernscrapper.webcrawler import WebCrawler
+from stjoernscrapper.rohlik import Rohlik
 from stjoernscrapper.nakup_itesco import NakupITesco
 from stjoernscrapper import logger
 import logging
 import sys
 from stjoernscrapper.config import Config
 from stjoernscrapper.core import Core
+from future.backports.test.support import multiprocessing
 
 def main():
     
@@ -44,7 +46,7 @@ def main():
         parser.add_option("-i", "--input", dest="input_file", type="string", help="Specify the input file with all web domains for scrapping")
         parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Print out in debug mode, default=False")
         
-        (options, args) = parser.parse_args()
+        (options, _) = parser.parse_args()
         if (options.input_file == None):
             logger.error("no input file for switches entered, " + parser.usage)
             exit(0)
@@ -70,14 +72,25 @@ def main():
     init_logging()
     parse_input()
     
+   
+    def thread_and_parse(metaclass, url):
+        web = globals()[metaclass](webDomain=url, checkDriver=False)
+        result = web.parse()
+        return result
+    
     def Start():
-        for key, value in WebCrawler.WebDomains.iteritems():
-            print("crawling domain: {}".format(key))
-            value = value.replace('<','').replace('>','')
-            web = globals()[value](webDomain=key, checkDriver=False)
-            if web:
-                web.parse()
-            
+        webs = [(value.replace('<','').replace('>',''), key) for key,value in WebCrawler.WebDomains.iteritems()]
+        if Config.threading:
+            pool = multiprocessing.Pool(processes=len(webs))
+            result_list = pool.map(thread_and_parse, webs)
+            print(result_list)
+        else:
+            for metaclass, url in webs:
+                web = globals()[metaclass](webDomain=url, checkDriver=False)
+                if web:
+                    result = web.parse()
+                    print(result)     
+                    
     Start()
 
 if __name__ == '__main__':

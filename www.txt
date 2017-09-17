@@ -1,3 +1,4 @@
 #www url, <className>
-https://nakup.itesco.cz/groceries/cs-CZ, <NakupITesco>
-https://www.automodul.cz, <WebCrawler>
+#https://nakup.itesco.cz/groceries/cs-CZ, <NakupITesco>
+#https://www.automodul.cz, <WebCrawler>
+https://www.rohlik.cz, <Rohlik>

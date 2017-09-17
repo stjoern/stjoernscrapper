@@ -1,4 +1,4 @@
-__all__ = ['webcrawler', 'core', 'config', 'nakup_itesco']
+__all__ = ['webcrawler', 'core', 'config', 'nakup_itesco', 'rohlik']
 import logging
 logger = logging.getLogger('sjoern-scrapper')
 import mongo_service

@@ -148,6 +148,7 @@ class WebCrawler(object):
                         db_cars.append(db_car)
                 if any(db_cars):
                     db[self.dbName].insert(db_cars,{'ordered':False})
+        return 0
             
     def close(self):
         logger.info("Successfully finished {}".format(self.webDomain))
