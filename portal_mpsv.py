@@ -1,5 +1,5 @@
 '''
-Created on Sep 10, 2017
+Created on Sep 18, 2017
 
 @author: mmullero
 '''
@@ -12,7 +12,7 @@ from selenium.common.exceptions import NoSuchElementException
 from pymongo.errors import DuplicateKeyError
 from time import sleep
 
-class Rohlik(WebCrawler):
+class PortalMpsv(WebCrawler):
     '''
     classdocs
     '''
@@ -37,13 +37,32 @@ class Rohlik(WebCrawler):
             self.set_web_driver()
         self.driver.get(self.webDomain)
         
-        sortiment_link = self.driver.find_element_by_class_name('categories__scroll-wrapper_desktop')
         
-        links = [link.get_attribute('href') for link in sortiment_link.find_elements_by_xpath("//div[@class='categories__item_desktop']//a")]
+        links = [{'category': Core.normalize2ascii(link.text), 'title': Core.normalize2ascii(link.get_attribute('title')), 'link': link} for link in self.driver.find_elements_by_class_name('vmSubmitLink')]
+        current_url_without_paging = self.driver.current_url
         
         for link in links:
             try:
-                db_groceries = []
+                db_vacancies = []
+                link.get('link').click()
+                table = self.driver.find_element_by_class_name('OKtable')
+                bodies = table.find_elements_by_tag_name('tbody')
+                for body in bodies:
+                    db_vacancy = { 'ts': self.ts, 'created': self.iso_time, 'category': link.get('category'), 'category_title': link.get('title')}
+                    rows = body.find_elements_by_tag_name('tr')
+                    for row in rows:
+                        ths = row.find_elements_by_tag_name('th')
+                        tds = row.find_elements_by_tag_name('td')
+                        for th, td in zip(ths,tds):
+                            th = Core.normalize2ascii(th.text)
+                            th = th[:-1] if th.endswith(':') else th
+                            td = Core.normalize2ascii(td.text)
+                            if not th or not td:
+                                continue
+                            db_vacancy[th] = td
+                            
+                
+                print('tu')
                 sortiment = self.get_sortiment(link)
                 print(sortiment)
                 redirect_to_url = link

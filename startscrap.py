@@ -7,6 +7,8 @@ from optparse import OptionParser
 from stjoernscrapper.webcrawler import WebCrawler
 from stjoernscrapper.rohlik import Rohlik
 from stjoernscrapper.nakup_itesco import NakupITesco
+from stjoernscrapper.sreality import Sreality
+from stjoernscrapper.portal_mpsv import PortalMpsv
 from stjoernscrapper import logger
 import logging
 import sys
