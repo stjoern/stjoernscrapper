@@ -11,6 +11,7 @@ from stjoernscrapper.webcrawler import WebCrawler
 from selenium.common.exceptions import NoSuchElementException
 from pymongo.errors import DuplicateKeyError
 from time import sleep
+from dateutil.parser import parse
 
 class PortalMpsv(WebCrawler):
     '''
@@ -48,115 +49,73 @@ class PortalMpsv(WebCrawler):
                 table = self.driver.find_element_by_class_name('OKtable')
                 bodies = table.find_elements_by_tag_name('tbody')
                 for body in bodies:
-                    db_vacancy = { 'ts': self.ts, 'created': self.iso_time, 'category': link.get('category'), 'category_title': link.get('title')}
-                    rows = body.find_elements_by_tag_name('tr')
-                    for row in rows:
-                        ths = row.find_elements_by_tag_name('th')
-                        tds = row.find_elements_by_tag_name('td')
-                        for th, td in zip(ths,tds):
-                            th = Core.normalize2ascii(th.text)
-                            th = th[:-1] if th.endswith(':') else th
-                            td = Core.normalize2ascii(td.text)
-                            if not th or not td:
-                                continue
-                            db_vacancy[th] = td
+                    try:
+                        db_vacancy = { 'ts': self.ts, 'created': self.iso_time, 'category': link.get('category'), 'category_title': link.get('title')}
+                        rows = body.find_elements_by_tag_name('tr')
+                        for row in rows:
+                            try:
+                                ths = row.find_elements_by_tag_name('th')
+                                tds = row.find_elements_by_tag_name('td')
+                                if len(ths) == len(tds):
+                                    for th, td in zip(ths,tds):
+                                        th = Core.normalize2ascii(th.text)
+                                        th = th[:-1] if th.endswith(':') else th
+                                        td = Core.normalize2ascii(td.text)
+                                        if not th or not td:
+                                            continue
+                                        if len(td) and len(th):
+                                            db_vacancy[th] = td
+                                elif len(tds) == 3:
+                                    try:
+                                        th = Core.normalize2ascii(tds[1].text)
+                                        th = th[:-1] if th.endswith(':') else th
+                                        td = Core.normalize2ascii(tds[2].text)
+                                        
+                                        if 'wage' in th.lower():
+                                            try:
+                                                number = Core.parseNumber(td)
+                                                _, measurement = Core.get_decimal_measurement_unit(td)
+                                                if (number and measurement):
+                                                    db_vacancy[th] = { 'wage': number, 'time': measurement}
+                                            except AttributeError:
+                                                if len(td):
+                                                    db_vacancy[th]=td
+                                            except Exception,e:
+                                                logger.error("error, todo")
+                                                pass
+                                        
+                                        elif 'period' in th.lower():
+                                            try:
+                                                td = td.replace('from','')
+                                                dt = parse(td)
+                                                dt = Core.get_iso_datetime(dt)
+                                            except AttributeError:
+                                                if len(td):
+                                                    db_vacancy[th]=td
+                                            except Exception,e:
+                                                logger.error("error, todo")
+                                                pass
+                                        else:    
+                                            if not th or not td:
+                                                continue
+                                            if len(th) and len(td):
+                                                db_vacancy[th] = td
+                                            
+                                    except Exception, e:
+                                        pass
+                                if any(db_vacancy):
+                                    db_vacancies.append(db_vacancy)   
                             
-                
-                print('tu')
-                sortiment = self.get_sortiment(link)
-                print(sortiment)
-                redirect_to_url = link
-                self.driver.get(redirect_to_url)
-                sleep(15)
-                
-                products = self.driver.find_elements_by_css_selector('.product__incart')
-                for product in products:
-                    db_grocery = {'ts': self.ts, 'created': self.iso_time}
-                    if sortiment:
-                        db_grocery['sortiment'] = sortiment
-                    try:
-                        size = product.find_element_by_class_name('product__amount')
-                        if size:
-                            size = size.text
-                            db_grocery['size'] = Core.normalize2ascii(size)
-                        h3 = product.find_element_by_xpath('.//h3[@class="product__name"]/a')
-                        if h3:
-                            title = h3.text
-                            db_grocery['title']=Core.normalize2ascii(title)
-                    except NoSuchElementException:
+                            except Exception, e:
+                                logger.error("Error occured at {}, details: {}".format(self.dbName, e.message))
+                                continue
+                    except Exception, e:
+                        logger.error("Error occured at {}, details: {}".format(self.dbName, e.message))
                         continue
-                    except Exception, e:
-                        raise ValueError(e.message)
-                    
-                    # promotion
-                    try:
-                        promotion_text = product.find_element_by_css_selector('.action.action-red')
-                        if promotion_text:
-                            promotion_text = promotion_text.text
-                            db_grocery['promotion_text'] = Core.normalize2ascii(promotion_text)
-                    except NoSuchElementException:
-                        pass
-                    except Exception, e:
-                        raise ValueError(e.message)
-                    
-                    
-                    try:
-                        promotion_price = product.find_element_by_css_selector('.tac')
-                        if promotion_price:
-                            price = promotion_price.find_element_by_xpath('.//strong')
-                            if price:
-                                price = price.text
-                                price = Core.parseNumber(price)
-                                print(price)
-                                price = Core.get_decimal_from_comma_string(price)
-                                db_grocery['new_price']=price
-                    except NoSuchElementException:
-                        pass
-                    except Exception, e:
-                        raise ValueError(e.message)
-                    # current/previous price
-                    try:
-                        old_price_text = None
-                        previous_price = promotion_price.find_element_by_css_selector('span.grey > del')
-                        if previous_price:
-                            old_price_text = Core.normalize2ascii(previous_price.text)
-                            old_price = Core.parseNumber(old_price_text)
-                            old_price = Core.get_decimal_from_comma_string(old_price)
-                            db_grocery['old_price']=old_price
-                    except NoSuchElementException:
-                        pass
-                    except Exception, e:
-                        raise ValueError(e.message)
-                    
-                    try:
-                        cur_price = promotion_price.find_element_by_css_selector('span.grey')
-                        if cur_price:
-                            current_price = cur_price.text
-                            current_price = Core.normalize2ascii(current_price)
-                            if old_price_text:
-                                current_price = current_price.split(old_price_text,1)[0]
-                            current_price, measurement_unit = Core.get_decimal_measurement_unit(current_price)
-                            db_grocery['current_price'] = {'Kc': current_price, 'measurement_unit': measurement_unit}
-                    
-                            if any(db_grocery):
-                                db_groceries.append(db_grocery)    
-                    except NoSuchElementException:
-                        pass
-                    except Exception, e:
-                        raise ValueError(e.message)
-                    
-                if any(db_groceries):
-                    try:
-                        db[self.dbName].insert(db_groceries,{'ordered':False})
-                    except DuplicateKeyError:
-                        raise ValueError("DB error at {}, {}".format(self.dbName, e.message))
-                        #for item in db_groceries:
-                        #    sub_sortiment = item.pop('sortiment',None)
-                        #    db[self.dbName].update({sub_sortiment},{'$set': sub_sortiment})
-                    except Exception, e:
-                        raise ValueError("DB error at {}, {}".format(self.dbName, e.message))
-                        # add subcategory
-                    
+                
+                if any(db_vacancies):
+                    db[self.dbName].insert(db_vacancies,{'ordered':False})    
+                      
             except (ValueError, Exception), e:
                 logger.error("Error occurred at {} while parsing the site. {}".format(self.dbName, e.message))
                 continue

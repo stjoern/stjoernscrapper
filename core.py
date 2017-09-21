@@ -52,7 +52,7 @@ class Core(object):
         if not string:
             return None
         string = Core.trim(string)
-        m = re.search('(\d+(?:,\d+)?)\s*(.*)$', string)
+        m = re.search('.*(\d+(?:,\d+)?)\s*(.*)$', string)
         decimal = m.group(1)
         measurement_unit = m.group(2)
         if decimal:
