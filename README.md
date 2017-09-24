@@ -15,7 +15,7 @@ You need to install Chromedriver.
 
 ### Installing
 
-- [Python 2.7 or 3.0 required]
+- [Python 2.7 or 3.0 required](https://www.python.org/downloads/)
 - [chromedriver](https://chromedriver.storage.googleapis.com/index.html?path=2.32/) currently supported only chromedriver 
 - [mongoDB](https://www.mongodb.com/download-center?jmp=nav#atlas) install nosql database where data will be stored
 - [R](https://cloud.r-project.org/) install R for statistical computing
@@ -76,8 +76,7 @@ dbRemoveQuery(db,'itesco','{"sortiment":"ovoce a zelenina"}')
 **Aggregation (pipeline mechanism):**
 ![alt text](https://docs.mongodb.com/manual/_images/aggregation-pipeline.bakedsvg.svg)
 ```
-output<-dbAggregate(db,"itesco",c(' { "$match":{"status":"A"} }',
-								  ' { "$group": {"_id": "$cust_id", "total": {"$sum": "$amount"}} } ))
+output<-dbAggregate(db,"itesco",c(' { "$match":{"status":"A"} }',' { "$group": {"_id": "$cust_id", "total": {"$sum": "$amount"}} } ))
 print(output)
 ```
 
