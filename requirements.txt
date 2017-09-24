@@ -1,0 +1,5 @@
+pymongo==2.7.2
+python_dateutil==2.6.1
+lxml==4.0.0
+selenium==3.5.0
+tldextract==2.1.0
