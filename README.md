@@ -42,7 +42,7 @@ install.packages("RMongo")
 
 You can start using stjoernscrapper as 'multithreaded' or 'singlethreaded' by defining in config.py the variable threading=True or False
 
-### To feed the stjoernscrapper with websites to be scrapped, there is [**www.txt**]()https://github.com/stjoern/stjoernscrapper/blob/master/www.txt file containing URL with class name.
+### To feed the stjoernscrapper with websites to be scrapped, there is [www.txt](https://github.com/stjoern/stjoernscrapper/blob/master/www.txt) file containing URL with class name.
 
 Stjoernscrapper has no GUI, it's console application.
 
