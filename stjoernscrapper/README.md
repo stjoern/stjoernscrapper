@@ -54,6 +54,33 @@ or in debug mode:
 python startscrap.py -i www.txt -v
 ```
 
+# Evaluate data in R Language:
+```
+library(RMongo)
+db<-mongoDbConnect('stjoern-scrapper', 'localhost',27017)
+query<-dbGetQuery(db,"itesco", "{'title':'Banany', 'price': {'$gt': 20}}")
+data<-query[c('price','sortiment','ts')]
+summary(data)
+dbDisconnect(db)
+```
+**to insert some data:**
+```
+dbInsertDocument(db,"itesco",'{"title":"New article", "price": 0.0}')
+```
+**other commands:**
+```
+dbGetDistinct(db,'itesco','sortiment')
+dbRemoveQuery(db,'itesco','{"sortiment":"ovoce a zelenina"}')
+```
+
+**Aggregation (pipeline mechanism):**
+[alt text](https://docs.mongodb.com/manual/_images/aggregation-pipeline.bakedsvg.svg)
+```
+output<-dbAggregate(db,"itesco",c(' { "$match":{"status":"A"} }',
+								  ' { "$group": {"_id": "$cust_id", "total": {"$sum": "$amount"}} } ))
+print(output)
+```
+
 ## Deployment
 
 In your chosen directory type:
