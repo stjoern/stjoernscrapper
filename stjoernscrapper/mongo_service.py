@@ -5,7 +5,9 @@ Created on Sep 13, 2017
 '''
 
 import pymongo
+
 from stjoernscrapper.config import Config
+
 
 Client = None
 db = None

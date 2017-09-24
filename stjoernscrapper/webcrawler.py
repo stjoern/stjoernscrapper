@@ -3,13 +3,16 @@ Created on Sep 10, 2017
 
 @author: mmullero
 '''
+from logging import handlers
+import logging
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+
 from stjoernscrapper import mongo_service
-from stjoernscrapper.core import Core, autolog
-import logging
-from logging import handlers
 from stjoernscrapper.config import Config
+from stjoernscrapper.core import Core, autolog
+
 
 class WebCrawler(object):
     '''
