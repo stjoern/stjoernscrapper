@@ -12,4 +12,8 @@ class Config(object):
     MONGODB_DB = "stjoern-scrapper"
     basedir = os.path.abspath(os.path.dirname(__file__))
     logpath = os.path.join(basedir, 'stjoern-scrapper.log')
-    threading = False
+    threading = True
+    
+    @staticmethod
+    def getLogPath(name):
+        return os.path.join(Config.basedir, '{}.log'.format(name))

@@ -5,12 +5,10 @@ Created on Sep 11, 2017
 '''
 import re
 import unicodedata
-from urlparse import urlparse
 import tldextract
 from time import time
 from datetime import datetime
-from mongo_service import db
-import sys
+from stjoernscrapper import mongo_service
 
 class Core(object):
     '''
@@ -73,13 +71,16 @@ class Core(object):
         
     @staticmethod
     def exists_collection(collection):
+        mongo_service.init()
+        db = mongo_service.db
         if db[collection].count() > 0:
             return True
         else:
             return False
+        mongo_service.Client.close()
         
     @staticmethod
-    def get_last_insert_counter(collection):
+    def get_last_insert_counter(db, collection):
         if Core.exists_collection(collection):  
             ts = db[collection].find_one({'$query': {'ts':{'$exists': True}}, '$orderby': {'ts': -1}}, {'ts':1,'_id':0}).get('ts',0) or 0
             return ts+1
@@ -91,3 +92,27 @@ class Core(object):
         s1 = Core.removeEmptyLines(string)
         s2 = s1.replace(',','.')
         return float('%.2f' % float(s2))
+    
+
+def autolog(logger):
+    import inspect
+    # Get the previous frame in the stack, otherwise it would
+    # be this function!!!
+    func = inspect.currentframe().f_back.f_code
+    # Dump the message + the name of this function to the log.
+    logger.debug("%s in %s:%i" % (
+        #message, 
+        func.co_name, 
+        func.co_filename, 
+        func.co_firstlineno
+    ))
+
+def errorlog(logger, msg):
+    import inspect
+    func = inspect.currentframe().f_back.f_code
+    logger.error("%s in %s:%i" % (
+        msg, 
+        func.co_name, 
+        func.co_filename, 
+        func.co_firstlineno
+    ))

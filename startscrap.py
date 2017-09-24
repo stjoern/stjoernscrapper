@@ -5,16 +5,17 @@ Created on Sep 10, 2017
 '''
 from optparse import OptionParser
 from stjoernscrapper.webcrawler import WebCrawler
+from stjoernscrapper.automodul import Automodul
 from stjoernscrapper.rohlik import Rohlik
 from stjoernscrapper.nakup_itesco import NakupITesco
 from stjoernscrapper.sreality import Sreality
 from stjoernscrapper.portal_mpsv import PortalMpsv
 from stjoernscrapper import logger
 import logging
-import sys
+from logging import handlers
 from stjoernscrapper.config import Config
 from stjoernscrapper.core import Core
-from future.backports.test.support import multiprocessing
+from multiprocessing import Pool
 
 def main():
     
@@ -28,20 +29,15 @@ def main():
         def filter(self, rec):
             return rec.levelno in (logging.ERROR, logging.CRITICAL)
 
-
     def init_logging():
-        
+        logger = logging.getLogger('sjoern-scrapper')
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-        h1 = logging.StreamHandler(sys.stdout)
-        h1.setLevel(logging.INFO)
-        h1.setFormatter(formatter)
-        h2 = logging.FileHandler(Config.logpath)
-        h2.setFormatter(formatter)
-        h2.setLevel(logging.INFO)
-       
-        logger.addHandler(h1)
-        logger.addHandler(h2)
+        handler = handlers.RotatingFileHandler(Config.logpath, maxBytes=20000000, backupCount=1)
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.INFO)
+        logger.addHandler(handler)
+        logger.info("{} INIT {}".format(27*'#', 27*'#'))
         
     def parse_input():
         parser = OptionParser(usage="usage: %prog [options] filename", version="%prog 1.0")
@@ -54,18 +50,27 @@ def main():
             exit(0)
 
         if options.verbose:
-            logger.setLevel(logging.DEBUG)
+            WebCrawler.Debug=True
         
         def init_web_domains():
             try:
                 logger.debug("Parse input file with web domains")
+                logger.info("Reading all web domain")
+                result = None
                 with open(options.input_file) as f:
                     line = f.read().splitlines()
                     web = filter(lambda x: x.strip().startswith('#')==False, line)
-                    res = {Core.removeEmptyLines(x).split(',')[0]:Core.removeEmptyLines(x).split(',')[1] for x in web} 
-                    return res
+                    result = {Core.removeEmptyLines(x).split(',')[0]:Core.removeEmptyLines(x).split(',')[1] for x in web}
+                if result:
+                    logger.info("These websites will be scrapped: ")
+                    for key in result.iterkeys():
+                        logger.info(" -> {}".format(key)) 
+                        
+                    logger.info("{}".format('-'*60))
+                return result
             except Exception as e:
                 logger.error("Error, the file with web domains is not valid. {}".format(e.message))
+                logger.error("The program will be terminated.")
                 exit(-1)
             
         # fill the list of web domain to the webcrawler
@@ -73,27 +78,30 @@ def main():
         
     init_logging()
     parse_input()
-    
-   
-    def thread_and_parse(metaclass, url):
-        web = globals()[metaclass](webDomain=url, checkDriver=False)
-        result = web.parse()
-        return result
-    
-    def Start():
-        webs = [(value.replace('<','').replace('>',''), key) for key,value in WebCrawler.WebDomains.iteritems()]
-        if Config.threading:
-            pool = multiprocessing.Pool(processes=len(webs))
-            result_list = pool.map(thread_and_parse, webs)
-            print(result_list)
-        else:
-            for metaclass, url in webs:
-                web = globals()[metaclass](webDomain=url, checkDriver=False)
-                if web:
-                    result = web.parse()
-                    print(result)     
-                    
-    Start()
 
+
+def thread_and_parse(metaclass, url):
+    web = globals()[metaclass](webDomain=url)#, checkDriver=False)
+    result = web.parse()
+    return result
+
+def unwrap_metaclasses(args):
+    return thread_and_parse(*args)
+     
 if __name__ == '__main__':
     main()
+    webs = [(value.replace('<','').replace('>',''), key) for key,value in WebCrawler.WebDomains.iteritems()]
+    
+    if Config.threading:
+        pool = Pool(len(WebCrawler.WebDomains))
+        results = pool.map(unwrap_metaclasses, webs)
+    else:
+        for metaclass, url in webs:
+            web = globals()[metaclass](webDomain=url, checkDriver=False)
+            if web:
+                result = web.parse()
+                print(result) 
+    logger.info("Successfully finished.")
+    logger.info("{}".format('-'*60))
+    
+    
