@@ -4,15 +4,14 @@ Stjoern scrapper collects important statistical data related to the market price
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+If you ever need help while using stjoernscrapper, you need to type:
+```
+python startscrap.py -h
+```
 
 ### Prerequisites
 
-What things you need to install the software and how to install them
-
-```
-Give examples
-```
+You need to install Chromedriver.
 
 ### Installing
 
@@ -26,7 +25,6 @@ You will need additionaly install libraries for python and R language.
 :snake: in the **stjoernscrapper** folder:
 ```
 pip install -r requirements.txt
-
 ```
 **R language** - you will need to install *RMongo* package
 you can install it either like:
@@ -44,20 +42,16 @@ install.packages("RMongo")
 
 You can start using stjoernscrapper as 'multithreaded' or 'singlethreaded' by defining in config.py the variable threading=True or False
 
-### To feed the stjoernscrapper with websites to be scrapped, there is **www.txt** file containing URL with class name.
+### To feed the stjoernscrapper with websites to be scrapped, there is [**www.txt**]()https://github.com/stjoern/stjoernscrapper/blob/master/www.txt file containing URL with class name.
 
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
+Stjoernscrapper has no GUI, it's console application.
 
 ```
-Give an example
+python startscrap.py -i www.txt 
+```
+or in debug mode:
+```
+python startscrap.py -i www.txt -v
 ```
 
 ## Deployment
