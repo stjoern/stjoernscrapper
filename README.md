@@ -16,27 +16,35 @@ Give examples
 
 ### Installing
 
-A step by step series of examples that tell you have to get a development env running
+- [Python 2.7 or 3.0 required]
+- [chromedriver](https://chromedriver.storage.googleapis.com/index.html?path=2.32/) currently supported only chromedriver 
+- [mongoDB](https://www.mongodb.com/download-center?jmp=nav#atlas) install nosql database where data will be stored
+- [R](https://cloud.r-project.org/) install R for statistical computing
 
-Say what the step will be
+You will need additionaly install libraries for python and R language.
+
+:snake: in the **stjoernscrapper** folder:
+```
+pip install -r requirements.txt
 
 ```
-Give the example
+**R language** - you will need to install *RMongo* package
+you can install it either like:
 ```
-
-And repeat
-
+install.packages("devtools")
+library(devtools)
+install_github("Rmongo")
 ```
-until finished
+or
 ```
-
-End with an example of getting some data out of the system or using it for a little demo
+install.packages("RMongo")
+```
 
 ## Running the tests
 
-Explain how to run the automated tests for this system
+You can start using stjoernscrapper as 'multithreaded' or 'singlethreaded' by defining in config.py the variable threading=True or False
 
-### Break down into end to end tests
+### To feed the stjoernscrapper with websites to be scrapped, there is **www.txt** file containing URL with class name.
 
 Explain what these tests test and why
 
@@ -54,27 +62,22 @@ Give an example
 
 ## Deployment
 
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+In your chosen directory type:
+```
+git clone https://github.com/stjoern/stjoernscrapper
+git checkout master
+git fetch --all
+```
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+We use [Git](https://git-scm.com/) for versioning. For the versions available, see the [tags on this repository](https://github.com/stjoern/stjoernscrapper/tags). 
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+* **Monika vos Mueller** - *Initial work* - [Stjoern](https://github.com/stjoern/)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/stjoern/stjoernscrapper/graphs/contributors) who participated in this project.
 
 ## License
 
@@ -82,8 +85,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
+* used by Komercni banka
+
 
 
