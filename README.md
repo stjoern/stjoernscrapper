@@ -74,7 +74,7 @@ dbRemoveQuery(db,'itesco','{"sortiment":"ovoce a zelenina"}')
 ```
 
 **Aggregation (pipeline mechanism):**
-[alt text](https://docs.mongodb.com/manual/_images/aggregation-pipeline.bakedsvg.svg)
+![alt text](https://docs.mongodb.com/manual/_images/aggregation-pipeline.bakedsvg.svg)
 ```
 output<-dbAggregate(db,"itesco",c(' { "$match":{"status":"A"} }',
 								  ' { "$group": {"_id": "$cust_id", "total": {"$sum": "$amount"}} } ))
