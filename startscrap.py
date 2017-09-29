@@ -18,6 +18,7 @@ from stjoernscrapper.rohlik import Rohlik
 from stjoernscrapper.sreality import Sreality
 from stjoernscrapper.webcrawler import WebCrawler
 
+Debug = False
 
 def main():
     
@@ -52,7 +53,8 @@ def main():
             exit(0)
 
         if options.verbose:
-            WebCrawler.Debug=True
+            global Debug
+            Debug=True
         
         def init_web_domains():
             try:
@@ -82,8 +84,8 @@ def main():
     parse_input()
 
 
-def thread_and_parse(metaclass, url):
-    web = globals()[metaclass](webDomain=url)#, checkDriver=False)
+def thread_and_parse(metaclass, url, checkDriver, debug):
+    web = globals()[metaclass](webDomain=url, checkDriver=checkDriver, debug=debug)
     result = web.parse()
     return result
 
@@ -92,14 +94,14 @@ def unwrap_metaclasses(args):
      
 if __name__ == '__main__':
     main()
-    webs = [(value.replace('<','').replace('>',''), key) for key,value in WebCrawler.WebDomains.iteritems()]
+    webs = [(value.replace('<','').replace('>',''), key, False, Debug) for key,value in WebCrawler.WebDomains.iteritems()]
     
     if Config.threading:
         pool = Pool(len(WebCrawler.WebDomains))
         results = pool.map(unwrap_metaclasses, webs)
     else:
         for metaclass, url in webs:
-            web = globals()[metaclass](webDomain=url, checkDriver=False)
+            web = globals()[metaclass](webDomain=url, checkDriver=False, debug=Debug)
             if web:
                 result = web.parse()
                 print(result) 

@@ -18,15 +18,14 @@ class WebCrawler(object):
     '''
     classdocs
     '''
-    Debug = False
     WebDomains = {}
     def __init__(self, *args, **kwargs):
         '''
         Constructor
         '''
-        
         self.webDomain = kwargs.get('webDomain')
         self.checkDriver = kwargs.get('checkDriver', False)
+        self.debug = kwargs.get('debug',False)
         self.dbName = Core.get_db_name(self.webDomain)
         self.init_logging()
         self.set_web_driver()
@@ -38,14 +37,13 @@ class WebCrawler(object):
         
     def init_logging(self):
         self.logger = logging.getLogger(self.dbName)
-        if WebCrawler.Debug:
+        if self.debug:
             self.logger.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
         handler = handlers.RotatingFileHandler(Config.getLogPath(self.dbName), maxBytes=20000000, backupCount=1)
         handler.setFormatter(formatter)
-        handler.setLevel(logging.INFO)
         self.logger.addHandler(handler)
         self.logger.info("{} INIT {}".format(27*'#', 27*'#'))
      
