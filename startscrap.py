@@ -17,6 +17,7 @@ from stjoernscrapper.portal_mpsv import PortalMpsv
 from stjoernscrapper.rohlik import Rohlik
 from stjoernscrapper.sreality import Sreality
 from stjoernscrapper.webcrawler import WebCrawler
+import re
 
 Debug = False
 
@@ -63,17 +64,17 @@ def main():
                 result = None
                 with open(options.input_file) as f:
                     line = f.read().splitlines()
-                    web = filter(lambda x: x.strip().startswith('#')==False, line)
-                    result = {Core.removeEmptyLines(x).split(',')[0]:Core.removeEmptyLines(x).split(',')[1] for x in web}
+                    web = filter(lambda x: x.strip().startswith('#')==False and not re.match('^\s*$', x), line)
+                    result = {x.split(',')[0]:x.split(',')[1] for x in web}
                 if result:
                     logger.info("These websites will be scrapped: ")
-                    for key in result.iterkeys():
+                    for key in result.keys():
                         logger.info(" -> {}".format(key)) 
                         
                     logger.info("{}".format('-'*60))
                 return result
             except Exception as e:
-                logger.error("Error, the file with web domains is not valid. {}".format(e.message))
+                logger.error("Error, the file with web domains is not valid. {}".format(e))
                 logger.error("The program will be terminated.")
                 exit(-1)
             
@@ -94,14 +95,14 @@ def unwrap_metaclasses(args):
      
 if __name__ == '__main__':
     main()
-    webs = [(value.replace('<','').replace('>',''), key, False, Debug) for key,value in WebCrawler.WebDomains.iteritems()]
+    webs = [(value.replace('<','').replace('>','').strip(), key.strip(), False, Debug) for key,value in WebCrawler.WebDomains.items()]
     
     if Config.threading:
         pool = Pool(len(WebCrawler.WebDomains))
         results = pool.map(unwrap_metaclasses, webs)
     else:
-        for metaclass, url in webs:
-            web = globals()[metaclass](webDomain=url, checkDriver=False, debug=Debug)
+        for metaurl in webs:
+            web = globals()[metaurl[0].strip()](webDomain=metaurl[1].strip(), checkDriver=False, debug=Debug)
             if web:
                 result = web.parse()
                 print(result) 

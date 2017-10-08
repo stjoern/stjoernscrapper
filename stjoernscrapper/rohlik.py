@@ -46,6 +46,8 @@ class Rohlik(WebCrawler):
                     sleep(15)
                     
                     products = self.driver.find_elements_by_css_selector('.product__incart')
+                    if products is None:
+                        continue
                     for product in products:
                         db_grocery = {'ts': self.ts, 'created': self.iso_time}
                         if sortiment:
@@ -63,8 +65,8 @@ class Rohlik(WebCrawler):
                                     db_grocery['title']=Core.normalize2ascii(title)
                         except NoSuchElementException:
                             continue
-                        except Exception, e:
-                            raise ValueError(e.message)
+                        except Exception as e:
+                            raise ValueError(e)
                         
                         # promotion
                         try:
@@ -75,8 +77,8 @@ class Rohlik(WebCrawler):
                                     db_grocery['promotion_text'] = Core.normalize2ascii(promotion_text)
                         except NoSuchElementException:
                             pass
-                        except Exception, e:
-                            raise ValueError(e.message)
+                        except Exception as e:
+                            raise ValueError(e)
                         
                         try:
                             promotion_price = product.find_element_by_css_selector('.tac')
@@ -90,8 +92,8 @@ class Rohlik(WebCrawler):
                                     db_grocery['new_price']=price
                         except NoSuchElementException:
                             pass
-                        except Exception, e:
-                            raise ValueError(e.message)
+                        except Exception as e:
+                            raise ValueError(e)
                         # current/previous price
                         try:
                             old_price_text = None
@@ -103,8 +105,8 @@ class Rohlik(WebCrawler):
                                 db_grocery['old_price']=old_price
                         except NoSuchElementException:
                             pass
-                        except Exception, e:
-                            raise ValueError(e.message)
+                        except Exception as e:
+                            raise ValueError(e)
                         
                         try:
                             cur_price = promotion_price.find_element_by_css_selector('span.grey')
@@ -120,24 +122,24 @@ class Rohlik(WebCrawler):
                                     db_groceries.append(db_grocery)    
                         except NoSuchElementException:
                             pass
-                        except Exception, e:
-                            raise ValueError(e.message)
+                        except Exception as e:
+                            raise ValueError(e)
                         
                     if any(db_groceries):
                         try:
                             self.logger.debug("Inserting records to {}".format(self.dbName))
                             self.db[self.dbName].insert(db_groceries,{'ordered':False})
                         except DuplicateKeyError:
-                            raise ValueError("DB error at {}, {}".format(self.dbName, e.message))
-                        except Exception, e:
-                            raise ValueError("DB error at {}, {}".format(self.dbName, e.message))
+                            raise ValueError("DB error at {}, {}".format(self.dbName, e))
+                        except Exception as e:
+                            raise ValueError("DB error at {}, {}".format(self.dbName, e))
                         
-                except (ValueError, Exception), e:
-                    errorlog(self.logger, e.message)
+                except (ValueError, Exception) as e:
+                    errorlog(self.logger, e)
                     continue
         
-        except Exception, e:
-            errorlog(self.logger, e.message)    
+        except Exception as e:
+            errorlog(self.logger, e)    
         finally:
             self.close()        
             

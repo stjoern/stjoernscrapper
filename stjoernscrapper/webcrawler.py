@@ -60,7 +60,7 @@ class WebCrawler(object):
             try:
                 self.driver = webdriver.Chrome(r"c:\KB\installation_instruction\project\stjoern-scrapper\install\chromedriver.exe")
             except Exception as e:
-                self.logger.error("Chrome driver is not in your path, please download chromedriver.exe!, {}".format(e.message))
+                self.logger.error("Chrome driver is not in your path, please download chromedriver.exe!, {}".format(e))
                 self.logger.error("stjoern-scrapper will be terminated.")
                 exit(-1)
 

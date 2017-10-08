@@ -30,7 +30,7 @@ class Automodul(WebCrawler):
             try:
                 self.driver = webdriver.Chrome(r"c:\KB\installation_instruction\project\stjoern-scrapper\install\chromedriver.exe")
             except Exception as e:
-                self.logger.error("Chrome driver is not in your path, please download chromedriver.exe!, {}".format(e.message))
+                self.logger.error("Chrome driver is not in your path, please download chromedriver.exe!, {}".format(e))
                 self.logger.error("stjoern-scrapper will be terminated.")
                 self.close()
                 exit(-1)
@@ -94,6 +94,8 @@ class Automodul(WebCrawler):
                         
                         parser = html.fromstring(self.driver.page_source, self.driver.current_url)
                         cars = parser.xpath('//div[contains(@name,"auto")]/div[@class="pravaCast"]')
+                        if not cars:
+                            continue
                         for car in cars:
                             try:
                                 db_car = {'type': typ, 'created': self.iso_time}
@@ -103,9 +105,18 @@ class Automodul(WebCrawler):
                                     db_car['title'] = Core.normalize2ascii(car_title[0].text)
                                     #todo exceptions if nothing found
                                 parameters = car.xpath('.//table[@class="parametry"]/tbody')[0]
-                                if parameters:
+                                if parameters is not None:
                                     cena = parameters.xpath('tr[@class="cena"]/td')[0].text
-                                    db_car['price'] = Core.parseNumber(cena)
+                                    if len(cena):
+                                        cena = Core.normalize2ascii(cena)
+                                        value = Core.parseNumber(cena)
+                                        if value:
+                                            try:
+                                                val = Core.get_decimal_from_comma_string(value)
+                                                if val:
+                                                    db_car['price'] = val
+                                            except ValueError:
+                                                db_car['price'] = value
                                     other_parameters = parameters.xpath('tr[not(@class="cena")]')
                                     for param in other_parameters:
                                         th = param.xpath('th')[0].text
@@ -118,11 +129,19 @@ class Automodul(WebCrawler):
                                         if th == 'Vyrobeno':
                                             value = Core.parseNumber(td)
                                             if value:
-                                                db_car['produced'] = value
+                                                try:
+                                                    val = int(value)
+                                                    db_car['produced'] = val
+                                                except ValueError:
+                                                    db_car['produced'] = value
                                         elif th == 'Tachometr':
                                             value = Core.parseNumber(td)
                                             if value:
-                                                db_car['speedometer'] = value
+                                                try:
+                                                    val = int(value)
+                                                    db_car['speedometer'] = val
+                                                except ValueError:
+                                                    db_car['speedometer'] = value
                                         elif th == 'Palivo':
                                             db_car['fuel'] = td
                                         elif th == 'Motorizace':
@@ -134,18 +153,18 @@ class Automodul(WebCrawler):
                                 if any(db_car):
                                     db_cars.append(db_car)
                             
-                            except Exception, e:
-                                errorlog(self.logger, e.message)
+                            except Exception as e:
+                                errorlog(self.logger, e)
                                 continue
                         
                         if any(db_cars):
                             self.logger.debug("Inserting records to {}".format(self.dbName))
                             self.db[self.dbName].insert(db_cars,{'ordered':False})
-                except Exception, e:
-                    errorlog(self.logger, e.message)
+                except Exception as e:
+                    errorlog(self.logger, e)
                     continue
                 
-        except Exception, e:
-            errorlog(self.logger, e.message)    
+        except Exception as e:
+            errorlog(self.logger, e)    
         finally:
             self.close()    

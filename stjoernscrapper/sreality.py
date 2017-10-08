@@ -41,12 +41,12 @@ class Sreality(WebCrawler):
                 no_ads = int(no_ads)
                 
                 no_of_ad_in_page = ads[0].text
-                filter_ = re.compile(ur'.*\u2013(.*)', re.UNICODE)
+                filter_ = re.compile(u'.*\u2013(.*)', re.UNICODE)
                 per_page = filter_.match(no_of_ad_in_page)
                 per_page = int(per_page.group(1))
                 return (no_ads + per_page // 2)//per_page
-            except Exception, e:
-                errorlog(self.logger, e.message)
+            except Exception as e:
+                errorlog(self.logger, e)
                 return None
         return None
     
@@ -73,10 +73,10 @@ class Sreality(WebCrawler):
                 my_filter = filter_url
                 try:
                     self.driver.find_element_by_xpath("//span[@class='caption ng-binding' and contains(text(), 'bez omezen')]")
-                except NoSuchElementException, e:
+                except NoSuchElementException as e:
                     my_filter = None
-                except Exception, e:
-                    errorlog(self.logger, e.message)
+                except Exception as e:
+                    errorlog(self.logger, e)
                     return -1
                 
                 self.driver.find_element_by_xpath("//button[@type='submit']").click()
@@ -86,30 +86,35 @@ class Sreality(WebCrawler):
                     self.driver.get(with_filter)
                 
                 category = self.getCategory(link)
-                self.logger("Crawling {} in category: {}".format(self.webDomain, category))
+                self.logger.info("Crawling {} in category: {}".format(self.webDomain, category))
                 # paging
                 current_url = self.driver.current_url
                 no_of_page_hops = self._getPager()
                 if not no_of_page_hops:
                     return -1
                 else:
-                    for page in range(1,no_of_page_hops):
+                    for page in range(0,no_of_page_hops):
                         self.logger.info("{} for page no. {}".format(self.webDomain, page))
                         redirect_url = "{cur_url}?strana={page}".format(cur_url=current_url, page=page)
                         self.driver.get(redirect_url)
-                        db_records = []
+                        
                         
                         ads = map(lambda x: _get_title_link(x), self.driver.find_elements_by_xpath('//a[@class="title"]'))
+                        ads = list(ads)
                         try:
-                            for title, ad in ads:
+                            db_records = []
+                            for titlead in ads:
+                                title = titlead[0]
+                                ad = titlead[1]
                                 if not title:
                                     continue
-                                db_record = {'ts': self.ts, 'created': self.iso_time, 'category': category, 'title': title }
                                
                                 self.driver.get(ad)
                                 
                                 # location
                                 try:
+                                    db_record = {'ts': self.ts, 'created': self.iso_time, 'category': category, 'title': title }
+                                    
                                     try:
                                         text = self.driver.find_element_by_class_name('location').text
                                         if text:
@@ -118,8 +123,8 @@ class Sreality(WebCrawler):
                                                 db_record['location'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                         
                                     # price
                                     try:
@@ -133,8 +138,8 @@ class Sreality(WebCrawler):
                                     except AttributeError:
                                         if len(text):
                                             db_record['price']=text
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # stavba
                                     try:
@@ -146,8 +151,8 @@ class Sreality(WebCrawler):
                                                 db_record['price_comment'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                     
                                     # description
                                     try:
@@ -158,8 +163,8 @@ class Sreality(WebCrawler):
                                                 db_record['description'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                     
                                     # ID zakazky
                                     try:
@@ -172,12 +177,12 @@ class Sreality(WebCrawler):
                                                     if len(id_zakazky):
                                                         db_record['order_id']=id_zakazky
                                                 except Exception as e:
-                                                    errorlog(self.logger, e.message)
+                                                    errorlog(self.logger, e)
                                                     pass
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                                 
                                     # actualizace
                                     try:
@@ -189,8 +194,8 @@ class Sreality(WebCrawler):
                                                 db_record['updated'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                         
                                     # stavba
                                     try:
@@ -202,8 +207,8 @@ class Sreality(WebCrawler):
                                                 db_record['building'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)  
+                                    except Exception as e:
+                                        raise ValueError(e)  
                                             
                                     # stav objektu
                                     try:
@@ -215,8 +220,8 @@ class Sreality(WebCrawler):
                                                 db_record['building_state'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                         
                                     # poloha domu
                                     try:
@@ -228,8 +233,8 @@ class Sreality(WebCrawler):
                                                 db_record['building_situation'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                         
                                     # umisteni objektu
                                     try:
@@ -241,8 +246,8 @@ class Sreality(WebCrawler):
                                                 db_record['building_location'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                         
                                     # typ domu
                                     try:
@@ -254,8 +259,8 @@ class Sreality(WebCrawler):
                                                 db_record['house_type'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                         
                                     # podlazi
                                     try:
@@ -267,8 +272,8 @@ class Sreality(WebCrawler):
                                                 db_record['floor'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                         
                                     # zastavena plocha
                                     try:
@@ -280,8 +285,8 @@ class Sreality(WebCrawler):
                                                 db_record['buil_up_area']=text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # uzitna plocha
                                     try:
@@ -293,8 +298,8 @@ class Sreality(WebCrawler):
                                                 db_record['built_up_area']=text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # plocha podlahova
                                     try:
@@ -306,8 +311,8 @@ class Sreality(WebCrawler):
                                                 db_record['floor_area']=text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # sklep
                                     try:
@@ -319,8 +324,8 @@ class Sreality(WebCrawler):
                                                 db_record['buil_up_area']=text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # parkovani
                                     try:
@@ -332,8 +337,8 @@ class Sreality(WebCrawler):
                                                 db_record['parking']=text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # doprava
                                     try:
@@ -345,8 +350,8 @@ class Sreality(WebCrawler):
                                                 db_record['transport']=text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # doprava
                                     try:
@@ -358,8 +363,8 @@ class Sreality(WebCrawler):
                                                 db_record['communication']=text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # komunikace
                                     try:
@@ -371,8 +376,8 @@ class Sreality(WebCrawler):
                                                 db_record['transport']=text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # vlastnictvi
                                     try:
@@ -384,8 +389,8 @@ class Sreality(WebCrawler):
                                                 db_record['ownership'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                                 
                                     # energeticka narocnost budovy
                                     try:
@@ -397,8 +402,8 @@ class Sreality(WebCrawler):
                                                 db_record['energy_performance'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # topeni
                                     try:
@@ -410,8 +415,8 @@ class Sreality(WebCrawler):
                                                 db_record['heating'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # vytah
                                     try:
@@ -423,8 +428,8 @@ class Sreality(WebCrawler):
                                                 db_record['lift'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # vybaveni
                                     try:
@@ -436,8 +441,8 @@ class Sreality(WebCrawler):
                                                 db_record['furnished'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # elektrina
                                     try:
@@ -449,8 +454,8 @@ class Sreality(WebCrawler):
                                                 db_record['electricity'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # voda
                                     try:
@@ -462,12 +467,9 @@ class Sreality(WebCrawler):
                                                 db_record['water'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
-                                    if any(db_record):
-                                        db_records.append(db_record)
-                                        
                                     # plocha pozemku
                                     try:
                                         text = self.driver.find_element_by_xpath("//*[starts-with(text(), 'Plocha pozemku')]")
@@ -478,8 +480,8 @@ class Sreality(WebCrawler):
                                                 db_record['land_area'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # plocha zahrady
                                     try:
@@ -491,8 +493,8 @@ class Sreality(WebCrawler):
                                                 db_record['garden_area'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)
+                                    except Exception as e:
+                                        raise ValueError(e)
                                     
                                     # vnitrni omitky
                                     try:
@@ -504,8 +506,8 @@ class Sreality(WebCrawler):
                                                 db_record['internal_plaster'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)  
+                                    except Exception as e:
+                                        raise ValueError(e)  
                                     
                                     # krytina
                                     try:
@@ -517,8 +519,8 @@ class Sreality(WebCrawler):
                                                 db_record['covering'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)  
+                                    except Exception as e:
+                                        raise ValueError(e)  
                                     
                                     # strecha
                                     try:
@@ -530,8 +532,8 @@ class Sreality(WebCrawler):
                                                 db_record['roof'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)           
+                                    except Exception as e:
+                                        raise ValueError(e)           
                                     
                                     # stropy
                                     try:
@@ -543,8 +545,8 @@ class Sreality(WebCrawler):
                                                 db_record['ceilings'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)        
+                                    except Exception as e:
+                                        raise ValueError(e)        
                                     
                                     # vnejsi obklady
                                     try:
@@ -556,8 +558,8 @@ class Sreality(WebCrawler):
                                                 db_record['outer_cladding'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)   
+                                    except Exception as e:
+                                        raise ValueError(e)   
                                     
                                     # okna
                                     try:
@@ -569,8 +571,8 @@ class Sreality(WebCrawler):
                                                 db_record['windows'] = text
                                     except NoSuchElementException:
                                         pass
-                                    except Exception, e:
-                                        raise ValueError(e.message)   
+                                    except Exception as e:
+                                        raise ValueError(e)   
                                     
                                     # cena za m2
                                     try:
@@ -586,25 +588,26 @@ class Sreality(WebCrawler):
                                     except AttributeError:
                                         if len(text):
                                             db_record['price_per_m2']=text
-                                    except Exception, e:
-                                        raise ValueError(e.message)            
+                                    except Exception as e:
+                                        raise ValueError(e)            
                                     
                                     if any(db_record):
                                         db_records.append(db_record)
                             
-                                except ValueError, e:
-                                    errorlog(self.logger, e.message)
+                                except (Exception, ValueError) as e:
+                                    errorlog(self.logger, e)
                                     continue
                             if any(db_records):
                                 self.logger.debug("Inserting records to {}".format(self.dbName))
                                 self.db[self.dbName].insert(db_records, {'ordered':False})
+                                db_records = []
                             
-                        except Exception, e:
-                            errorlog(self.logger, e.message)
+                        except Exception as e:
+                            errorlog(self.logger, e)
                             continue
                         
-        except Exception, e:
-            errorlog(self.logger, e.message)    
+        except Exception as e:
+            errorlog(self.logger, e)    
         finally:
             self.close()                
                     
