@@ -59,14 +59,18 @@ class WebCrawler(object):
                 'chromeOptions': {
                     'useAutomationExtension': False,
                     'forceDevToolsScreenshot': True,
-                    'args': ['--start-maximized', '--disable-infobars']
+                    #'args': ['--start-maximized', '--disable-infobars']
                 }
         }
+        service_args = ['--start-maximized', '--disable-infobars']
+        if self.debug:
+            service_args.extend(["--verbose","--log-path={}".format(Config.chromedriver_log)])
+            #capabilities.get('chromeOptions',{}).get('args',[]).append('--verbose').append('--log-path={}'.format(Config.chromedriver_log))
         try:
-            self.driver = webdriver.Chrome(desired_capabilities=capabilities)
+            self.driver = webdriver.Chrome(desired_capabilities=capabilities, service_args=service_args)
         except:
             try:
-                self.driver = webdriver.Chrome(Config.chromedriver_path, desired_capabilities=capabilities)
+                self.driver = webdriver.Chrome(Config.chromedriver_path, desired_capabilities=capabilities, service_args=service_args)
             except Exception as e:
                 self.logger.error("Chrome driver is not in your path, please download chromedriver.exe!, {}".format(e))
                 self.logger.error("stjoern-scrapper will be terminated.")
