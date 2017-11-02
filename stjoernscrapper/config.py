@@ -13,6 +13,7 @@ class Config(object):
     basedir = os.path.abspath(os.path.dirname(__file__))
     logpath = os.path.join(basedir, 'stjoern-scrapper.log')
     threading = True
+    chromedriver_path = r"c:\KB\installation_instruction\project\stjoern-scrapper\install\chromedriver.exe"
     
     @staticmethod
     def getLogPath(name):
