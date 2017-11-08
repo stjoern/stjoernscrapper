@@ -21,19 +21,6 @@ class Automodul(WebCrawler):
         Constructor
         '''
         WebCrawler.__init__(self, *args, **kwargs)
-        
-    def set_web_driver(self, driver = 'chrome'):
-        autolog(self.logger)
-        try:
-            self.driver = webdriver.Chrome()
-        except:
-            try:
-                self.driver = webdriver.Chrome(r"c:\KB\installation_instruction\project\stjoern-scrapper\install\chromedriver.exe")
-            except Exception as e:
-                self.logger.error("Chrome driver is not in your path, please download chromedriver.exe!, {}".format(e))
-                self.logger.error("stjoern-scrapper will be terminated.")
-                self.close()
-                exit(-1)
 
     def _getPager(self):
         autolog(self.logger)
