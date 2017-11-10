@@ -72,7 +72,7 @@ class PortalMpsv(WebCrawler):
                     link = self.driver.find_element(By.XPATH, "//a[contains(@title, "+ '\''+ ilink + "')]")
                     link.click()
                     
-                    self.logger.info("Crawling {} -> {}, category: {}".format(self.webDomain, link.get('link'), link.get('category')))
+                    self.logger.info("Crawling {} -> {}, category: {}".format(self.webDomain, links[index].get('title'), links[index].get('category')))
                     
                     while True:
                         #table = self.driver.find_element_by_class_name('OKtable')
@@ -80,7 +80,7 @@ class PortalMpsv(WebCrawler):
                         db_vacancies = []
                         for body in bodies:
                             try:
-                                db_vacancy = { 'ts': self.ts, 'created': self.iso_time, 'category': link.get('category'), 'category_title': link.get('title')}
+                                db_vacancy = { 'ts': self.ts, 'created': self.iso_time, 'category': links[index].get('category'), 'category_title': links[index].get('title')}
                                 rows = body.find_elements_by_tag_name('tr')
                                 for row in rows:
                                     try:
