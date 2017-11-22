@@ -67,7 +67,7 @@ class WebCrawler(object):
             service_args.extend(["--verbose","--log-path={}".format(Config.chromedriver_log)])
             #capabilities.get('chromeOptions',{}).get('args',[]).append('--verbose').append('--log-path={}'.format(Config.chromedriver_log))
         try:
-            self.driver = webdriver.Chrome(desired_capabilities=capabilities, service_args=service_args)
+            self.driver = webdriver.Chrome()#(desired_capabilities=capabilities, service_args=service_args)
         except:
             try:
                 self.driver = webdriver.Chrome(Config.chromedriver_path, desired_capabilities=capabilities, service_args=service_args)
@@ -109,5 +109,8 @@ class WebCrawler(object):
         if self.driver: 
             self.driver.close() 
         if self.client:
-            self.client.close()        
+            self.client.close()  
+            
+    def success(self):
+        return {'success': True, 'page': self.webDomain}      
         

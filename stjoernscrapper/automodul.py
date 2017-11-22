@@ -12,9 +12,8 @@ import re
 
 class Automodul(WebCrawler):
     '''
-    classdocs
+    Automodul Crawling
     '''
-    WebDomains = {}
 
     def __init__(self, *args, **kwargs):
         '''
@@ -30,7 +29,7 @@ class Automodul(WebCrawler):
         elems = self.driver.find_elements_by_xpath("//div[@class='pager']/a[@href]")
         if elems:
             last_href = elems[-1].get_attribute('href')
-            print(last_href)
+            self.logger(last_href)
             m = re.search('.*&pg=(?P<maxpage>[0-9]+)$', last_href)
             max_page = int(m.group('maxpage'))
             return max_page
@@ -43,6 +42,7 @@ class Automodul(WebCrawler):
             WebCrawler.parse(self)
             links = [link.get_attribute('href') for link in self.driver.find_elements_by_xpath("//div[@id='filtr']/ul/li/a")]
             for link in links:
+                self.logger.info("Crawling Automodul, link: {}".format(link))
                 try:
                     if 'osobni' in link:
                         typ = 'osobni'
@@ -74,79 +74,87 @@ class Automodul(WebCrawler):
                     current_url_without_paging = self.driver.current_url
                     
                     for page in range(0,page_max):
-                        self.logger.info('Parsing {} page: {}'.format(self.webDomain, page))
-                        redirect_to_url = "{no_page}&pg={page}".format(no_page=current_url_without_paging, page=page)
-                        self.driver.get(redirect_to_url)
-                        db_cars = []
-                        
-                        parser = html.fromstring(self.driver.page_source, self.driver.current_url)
-                        cars = parser.xpath('//div[contains(@name,"auto")]/div[@class="pravaCast"]')
-                        if not cars:
-                            continue
-                        for car in cars:
-                            try:
-                                db_car = {'type': typ, 'created': self.iso_time}
-                                car_title = car.xpath('.//h2/a')
-                                if car_title:
-                                    db_car['ts'] = self.ts
-                                    db_car['title'] = Core.normalize2ascii(car_title[0].text)
-                                    #todo exceptions if nothing found
-                                parameters = car.xpath('.//table[@class="parametry"]/tbody')[0]
-                                if parameters is not None:
-                                    cena = parameters.xpath('tr[@class="cena"]/td')[0].text
-                                    if len(cena):
-                                        cena = Core.normalize2ascii(cena)
-                                        value = Core.parseNumber(cena)
-                                        if value:
-                                            try:
-                                                val = Core.get_decimal_from_comma_string(value)
-                                                if val:
-                                                    db_car['price'] = val
-                                            except ValueError:
-                                                db_car['price'] = value
-                                    other_parameters = parameters.xpath('tr[not(@class="cena")]')
-                                    for param in other_parameters:
-                                        th = param.xpath('th')[0].text
-                                        td = param.xpath('td')[0].text
-                                        if not td:
-                                            continue
-                                        td = Core.normalize2ascii(td)
-                                        if not len(td):
-                                            continue
-                                        if th == 'Vyrobeno':
-                                            value = Core.parseNumber(td)
-                                            if value:
-                                                try:
-                                                    val = int(value)
-                                                    db_car['produced'] = val
-                                                except ValueError:
-                                                    db_car['produced'] = value
-                                        elif th == 'Tachometr':
-                                            value = Core.parseNumber(td)
-                                            if value:
-                                                try:
-                                                    val = int(value)
-                                                    db_car['speedometer'] = val
-                                                except ValueError:
-                                                    db_car['speedometer'] = value
-                                        elif th == 'Palivo':
-                                            db_car['fuel'] = td
-                                        elif th == 'Motorizace':
-                                            db_car['motorizace'] = td
-                                        elif th == 'Tvar karoserie':
-                                            db_car['body_shape'] = td
-                                        else:
-                                            continue
-                                if any(db_car):
-                                    db_cars.append(db_car)
+                        try:
+                            self.logger.info('Parsing {} page: {}'.format(self.webDomain, page))
+                            redirect_to_url = "{no_page}&pg={page}".format(no_page=current_url_without_paging, page=page)
+                            self.driver.get(redirect_to_url)
+                            db_cars = []
                             
-                            except Exception as e:
-                                errorlog(self.logger, e)
+                            parser = html.fromstring(self.driver.page_source, self.driver.current_url)
+                            cars = parser.xpath('//div[contains(@name,"auto")]/div[@class="pravaCast"]')
+                            if not cars:
                                 continue
+                            for car in cars:
+                                try:
+                                    autolog(self.logger)
+                                    db_car = {'type': typ, 'created': self.iso_time}
+                                    car_title = car.xpath('.//h2/a')
+                                    if car_title:
+                                        db_car['ts'] = self.ts
+                                        db_car['title'] = Core.normalize2ascii(car_title[0].text)
+
+                                    parameters = car.xpath('.//table[@class="parametry"]/tbody')[0]
+                                    if parameters is not None:
+                                        cena = parameters.xpath('tr[@class="cena"]/td')[0].text
+                                        if len(cena):
+                                            cena = Core.normalize2ascii(cena)
+                                            value = Core.parseNumber(cena)
+                                            if value:
+                                                try:
+                                                    val = Core.get_decimal_from_comma_string(value)
+                                                    if val:
+                                                        db_car['price'] = val
+                                                except ValueError:
+                                                    db_car['price'] = value
+                                                    pass
+                                        other_parameters = parameters.xpath('tr[not(@class="cena")]')
+                                        for param in other_parameters:
+                                            th = param.xpath('th')[0].text
+                                            td = param.xpath('td')[0].text
+                                            if not td:
+                                                continue
+                                            td = Core.normalize2ascii(td)
+                                            if not len(td):
+                                                continue
+                                            if th == 'Vyrobeno':
+                                                value = Core.parseNumber(td)
+                                                if value:
+                                                    try:
+                                                        val = int(value)
+                                                        db_car['produced'] = val
+                                                    except ValueError:
+                                                        db_car['produced'] = value
+                                            elif th == 'Tachometr':
+                                                value = Core.parseNumber(td)
+                                                if value:
+                                                    try:
+                                                        val = int(value)
+                                                        db_car['speedometer'] = val
+                                                    except ValueError:
+                                                        db_car['speedometer'] = value
+                                            elif th == 'Palivo':
+                                                db_car['fuel'] = td
+                                            elif th == 'Motorizace':
+                                                db_car['motorizace'] = td
+                                            elif th == 'Tvar karoserie':
+                                                db_car['body_shape'] = td
+                                            else:
+                                                continue
+                                    if any(db_car):
+                                        db_cars.append(db_car)
+                                
+                                except Exception as e:
+                                    errorlog(self.logger, e)
+                                    continue
+                            
+                            if any(db_cars):
+                                self.logger.debug("Inserting records to {}".format(self.dbName))
+                                self.db[self.dbName].insert(db_cars,{'ordered':False})
                         
-                        if any(db_cars):
-                            self.logger.debug("Inserting records to {}".format(self.dbName))
-                            self.db[self.dbName].insert(db_cars,{'ordered':False})
+                        except (ValueError, Exception) as e:
+                            errorlog(self.logger, e)
+                            continue
+                        
                 except Exception as e:
                     errorlog(self.logger, e)
                     continue
@@ -154,4 +162,6 @@ class Automodul(WebCrawler):
         except Exception as e:
             errorlog(self.logger, e)    
         finally:
-            self.close()    
+            WebCrawler.close(self) 
+            return WebCrawler.success(self)
+              

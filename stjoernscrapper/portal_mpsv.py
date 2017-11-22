@@ -13,7 +13,7 @@ from time import sleep
 
 class PortalMpsv(WebCrawler):
     '''
-    classdocs
+    PortalMpsv Crawling
     '''
     def __init__(self, *args, **kwargs):
         '''
@@ -172,6 +172,7 @@ class PortalMpsv(WebCrawler):
         except Exception as e:
             errorlog(self.logger, e)    
         finally:
-            self.close()
+            WebCrawler.close(self) 
+            return WebCrawler.success(self)
       
         

@@ -105,7 +105,7 @@ if __name__ == '__main__':
             web = globals()[metaurl[0].strip()](webDomain=metaurl[1].strip(), checkDriver=False, debug=Debug)
             if web:
                 result = web.parse()
-                print(result) 
+                logger.info(result) 
     logger.info("Successfully finished.")
     logger.info("{}".format('-'*60))
     
