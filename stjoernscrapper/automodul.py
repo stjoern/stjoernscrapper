@@ -29,7 +29,7 @@ class Automodul(WebCrawler):
         elems = self.driver.find_elements_by_xpath("//div[@class='pager']/a[@href]")
         if elems:
             last_href = elems[-1].get_attribute('href')
-            self.logger(last_href)
+            self.logger.info(last_href)
             m = re.search('.*&pg=(?P<maxpage>[0-9]+)$', last_href)
             max_page = int(m.group('maxpage'))
             return max_page
