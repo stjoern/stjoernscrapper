@@ -22,12 +22,16 @@ class Rohlik(WebCrawler):
         WebCrawler.__init__(self, *args, **kwargs)
     
     def get_sortiment(self, link):
-        autolog(self.logger)
-        # e.g. /c300101000-pekarna-a-cukrarna
-        link = link.split('?orderBy',1)[0]
-        m = re.search('.*[0-9]+-(?P<sortiment>.*).*$', link)
-        sortiment = m.group('sortiment')
-        return sortiment.replace('-',' ')
+        try:
+            autolog(self.logger)
+            # e.g. /c300101000-pekarna-a-cukrarna
+            link = link.split('?orderBy',1)[0]
+            m = re.search('.*[0-9]+-(?P<sortiment>.*).*$', link)
+            sortiment = m.group('sortiment')
+            return sortiment.replace('-',' ')
+        except (Exception, AttributeError) as e:
+            self.logger.error("Error no such sortiment, details: {}".format(e))
+            return None
     
     def parse(self):
         try:
@@ -40,6 +44,8 @@ class Rohlik(WebCrawler):
                     autolog(self.logger)
                     db_groceries = []
                     sortiment = self.get_sortiment(link)
+                    if not sortiment:
+                        continue
                     self.logger.info("Crawling {} -> {}, category: {}".format(self.webDomain, link, sortiment))
                     
                     redirect_to_url = link

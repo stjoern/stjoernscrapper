@@ -97,7 +97,7 @@ class Sreality(WebCrawler):
                     
                     if not no_of_page_hops:
                         autolog(self.logger)
-                        logger.error("Sreality problem while getting pages from link: {}".format(link))
+                        self.logger.error("Sreality problem while getting pages from link: {}".format(link))
                         continue
                     else:
                         for page in range(0,no_of_page_hops):
